@@ -2,8 +2,6 @@
 
 JavaScript高级程序设计(第四版)读书笔记
 
-[toc]
-
 ## 2.JavaScript in HTML
 
 ### 2.1THE \<SCRTPT> ELEMENT
@@ -1578,3 +1576,234 @@ apply 方法传入两个参数：一个是作为函数上下文的对象，另�
 
 call 方法第一个参数也是作为函数上下文的对象，但是后面传入的是一个参数列表，而不是单个数组。
 
+### 10.11 函数表达
+
+- function声明
+
+```javascript
+function functionName(arg0, arg1, arg2) { 
+  // function body
+}
+
+
+```
+
+这种方式有一个关键特性 ——*function declaration hoisting*
+
+```javascript
+sayHi();
+function sayHi() {
+  console.log("Hi!"); 
+}
+//This example doesn’t throw an error because the function declaration is read first before the code begins to execute.
+```
+
+- function expression
+
+```javascript
+let functionName = function(arg0, arg1, arg2) { 
+  // function body
+};
+
+sayHi(); // Error! function doesn't exist yet let sayHi = 
+function() {
+  console.log("Hi!"); 
+};
+```
+
+对于*function declaration hoisting*这个特性
+
+```javascript
+// Never do this! 
+if (condition) {
+  function sayHi() { 
+    console.log('Hi!');
+}
+} else {
+  function sayHi() { 
+    console.log('Yo!');
+  } 
+}
+//大多数浏览器忽视condition的值，只承认第二次定义。但是firefox会依照condition的值
+
+// OK
+let sayHi;
+if (condition) {
+  sayHi = function() { 
+    console.log("Hi!");
+};
+} else {
+  sayHi = function() { 
+    console.log("Yo!");
+  }; 
+}
+
+```
+
+### 10.12 递归
+
+```javascript
+function factorial(num) { 
+  if (num <= 1) {
+    return 1; 
+  } else {
+    return num * factorial(num - 1); 
+  }
+}
+
+function factorial(num) { 
+  if (num <= 1) {
+    return 1; 
+  } else {
+    return num * arguments.callee(num - 1); // strct mode 下无法使用
+  } 
+}
+```
+
+### 10.13 尾调用优化
+
+**尾调用**是指一个函数里的最后一个动作是返回一个函数的调用结果的情形，即最后一步新调用的返回值直接被当前函数的返回结果。
+
+"**尾调用优化**"（Tail call optimization），即只保留内层函数的调用记录。如果所有函数都是尾调用，那么完全可以做到每次执行时，调用记录只有一项，这将大大节省内存。
+
+举个例子
+
+```javascript
+function outerFunction() {
+  return innerFunction(); // tail call
+}
+```
+
+- 在ES6优化之前
+  1. 到达outerFunction函数主体，第一栈帧压入中
+  2. 执行outerFunction主体，到达return
+  3. 到达innerFunction函数主体，第二栈帧压入中
+  4. 执行innerFunction主体，返回值被估计
+  5. 返回值传递给outerFunction
+  6. 栈压出
+- 在ES6优化后
+  1. 到达outerFunction函数主体，第一栈帧压入中
+  2. 执行outerFunction主体，到达return
+  3. 由于innnerFunction的返回值也是outerFunction的返回值，引擎识别出first stack frame可以被安全压出
+  4. outerFunction栈帧压出
+  5. 执行到innerFunction，栈帧压入
+  6. 执行innerFunction主体，返回值被估计
+  7. innerFunction栈帧压出
+
+两者明显的差别在于第一个执行会引起一个多余的栈帧
+
+ES6尾调用优化的核心在于调用记录只有一项
+
+#### 10.13.1 尾调用优化的条件
+
+- 代码在strct mode下执行
+- 返回值是调用函数
+- 尾调用之后没有其他执行
+- 尾函数不是闭包
+
+```javascript
+"use strict";
+// No optimization: tail call is not returned function 
+outerFunction() {
+  innerFunction();
+}
+
+// No optimization: tail call is not directly returned function 
+outerFunction() {
+  let innerFunctionResult = innerFunction();
+  return innerFunctionResult;
+}
+// No optimization: tail call must be cast as a string after return function 
+outerFunction() {
+  return innerFunction().toString(); 
+}
+// No optimization: tail call is a closure function 
+outerFunction() {
+  let foo = 'bar';
+  function innerFunction() { return foo; }
+  return innerFunction(); 
+}
+```
+
+#### 10.13.2 尾调用优化代码
+
+```javascript
+function fib(n) { 
+  if (n < 2) {
+    return n; 
+  }
+  return fib(n – 1) + fib(n – 2); 
+}
+
+// use tail call
+"use strict";
+// base case 
+function fib(n) {
+  return fibImpl(0, 1, n); 
+}
+// recursive case
+function fibImpl(a, b, n) {
+  if (n === 0) { return a;
+}
+  return fibImpl(b, a + b, n - 1); 
+}
+```
+
+### 10.14 闭包(CLOSURES)
+
+匿名函数与闭包两者经常被混淆
+
+闭包就是能够读取其他函数内部变量的函数。在本质上，闭包就是将函数内部和函数外部连接起来的一座桥梁。
+
+闭包可以用在许多地方。它的最大用处有两个，一个是前面提到的可以读取函数内部的变量，另一个就是让这些变量的值始终保持在内存中。
+
+#### 10.14.1 The this object
+
+在这个上下文（执行环境）中匿名函数并没有绑定到任何一个对象中，意味着this指向window（除非这个上下文（执行环境）是在严格模式下执行的，而严格模式下该this指向undefined）
+
+```javascript
+window.identity = 'The Window'; let object = {
+  identity: 'My Object', getIdentityFunc() {
+    return function() { 
+      return this.identity;
+    }; 
+  }
+};
+console.log(object.getIdentityFunc()()); // 'The Window'
+```
+
+```javascript
+window.identity = 'The Window';
+let object = {
+  identity: 'My Object', getIdentityFunc() {
+    let that = this;
+    return function() {
+      return that.identity;
+    }; }
+};
+console.log(object.getIdentityFunc()()); // 'My Object'
+
+```
+
+#### 10.14.2 内存泄漏
+
+```javascript
+function assignHandler() {
+let element = document.getElementById('someElement'); element.onclick = () => console.log(element.id);
+}
+```
+
+只要匿名函数存在，element至少为1
+
+```javascript
+function assignHandler() {
+let element = document.getElementById('someElement'); let id = element.id;
+element.onclick = () => console.log(id); element = null;
+}
+```
+
+### 10.15 立刻调用函数表达(IMMEDIATELY INVOKED FUNCTION EXPRESSIONS)
+
+### 10.16 模块模式
+
+模块模式是为单例模式添加私有变量和私有方法，并减少全局变量的使用
