@@ -1315,7 +1315,1008 @@ s.delete("Matt");
 
 
 
-## 7 
+## 8 Objects, Classes, and Object-Oriented Programming
+
+### 8.1 理解Objects
+
+- 两种创建模式
+
+```javascript
+let person = new Object(); 
+person.name = "Nicholas"; 
+person.age = 29;
+person.job = "Software Engineer";
+person.sayName = function() { 
+  console.log(this.name);
+};
+
+let person = {
+name: "Nicholas",
+age: 29,
+job: "Software Engineer", sayName() {
+console.log(this.name); }
+};
+```
+
+#### 8.1.1 属性的类型(Types of Properties)
+
+##### 8.1.1.1 数据属性(Data Properties)
+
+数据属性包含一个单独的数据地址，由这个地址进行读写操作
+
+数据属性拥有四个特性(attribute)
+
+- [[Configurable]]——描述符是否可以改变
+- [[Enumerable]]——是否可以迭代
+- [[Writable]]——是否可以修改
+- [[Value]]——默认为undefined
+
+```javascript
+let person = {}; Object.defineProperty(person, "name", {
+writable: false,
+value: "Nicholas" });
+console.log(person.name); // "Nicholas" 
+person.name = "Greg"; 
+console.log(person.name); // "Nicholas"
+```
+
+##### 8.1.1.2 访问器属性
+
+- [[Configurable]]
+- [[Enumerable]]
+- [[Get]]——属性读取时的返回值
+- [[Set]]
+
+```javascript
+// Define object with pseudo-private member 'year_' 
+// and public member 'edition'
+let book = {
+  year_: 2017,
+  edition: 1 };
+	Object.defineProperty(book, "year", { 
+    get() {
+			return this.year_; 
+    },
+    set(newValue) {
+      if (newValue > 2017) {
+				this.year_ = newValue;
+				this.edition += newValue - 2017; 
+      }
+    } 
+  });
+book.year = 2018;
+console.log(book.edition); // 2
+```
+
+#### 8.1.2 定义多个属性
+
+```javascript
+let book = {}; 
+Object.defineProperties(book, {
+  year_: { 
+    value: 2017
+  },
+  edition: { 
+    value: 1
+  },
+  year: { 
+    get() {
+      return this.year_; 
+    },
+    set(newValue) {
+      if (newValue > 2017) {
+        this.year_ = newValue;
+        this.edition += newValue - 2017; }
+    } 
+  }
+});
+```
+
+#### 8.1.3 阅读属性值(Reading Property Attributes)
+
+- Object. getOwnPropertyDescriptor()查看属性描述符
+
+#### 8.1.4 合并Objects
+
+- Object.assign()
+
+```javascript
+let dest, src, result;
+/**
+* Simple copy */
+dest = {};
+src = { id: 'src' };
+result = Object.assign(dest, src);
+// Object.assign mutates the destination object 
+// and also returns that object after exiting.
+console.log(dest === result);	// true
+console.log(dest !== src);		// true
+console.log(result);					// { id: src}
+console.log(dest);						// { id: src}
+```
+
+#### 8.1.5 Object Identity and Equality
+
+- Object.is()
+
+```javascript
+console.log(Object.is(true, 1)); // false
+console.log(Object.is({}, {})); // false
+console.log(Object.is("2", 2));// false
+
+// Correct 0, -0, +0 equivalence/nonequivalence:
+console.log(Object.is(+0, -0)); // false
+console.log(Object.is(+0, 0)); // true
+console.log(Object.is(-0, 0));// false
+
+// Correct NaN equivalence: 
+console.log(Object.is(NaN, NaN)); // true
+```
+
+#### 8.1.6 Enhanced Object Syntax
+
+##### 8.1.6.1 属性值简写(Property Value Shorthand)
+
+ES6中的新特性，键值与属性值相同时，可以简写
+
+```javascript
+let name = 'Matt';
+let person = { name};
+console.log(person); // { name: 'Matt' }
+```
+
+##### 8.1.6.2 计算型属性值
+
+```javascript
+const nameKey = 'name'; 
+const ageKey = 'age'; 
+const jobKey = 'job'; 
+let uniqueToken = 0;
+function getUniqueKey(key) {
+  return '${key}_${uniqueToken++}';
+}
+let person = {
+  [getUniqueKey(nameKey)]: 'Matt', 
+  [getUniqueKey(ageKey)]: 27, 
+  [getUniqueKey(jobKey)]: 'Software engineer'
+};
+console.log(person); // { name_0: 'Matt', age_1: 27, job_2: 'Software engineer' }
+```
+
+##### 8.1.6.3 简洁工具语法
+
+```javascript
+let person = {
+  sayName: function(name){
+    console.log(`My name is ${name}`);
+  }
+}
+
+let person = {
+  sayName(name) {
+    console.log(`My name is ${name}`); 
+  }
+};
+```
+
+与以上两种特性结合
+
+```javascript
+const methodKey = 'sayName';
+let person = {
+  [methodKey](name) {
+    console.log('My name is ${name}'); }
+}
+person.sayName('Matt'); // My name is Matt
+```
+
+#### 8.1.7 Object 结构
+
+```javascript
+// Without object destructuring 
+let person = {
+  name: 'Matt',
+  age: 27 };
+let personName = person.name, personAge = person.age;
+console.log(personName); // Matt
+console.log(personAge); // 27
+
+
+// With object destructuring 
+let person = {
+  name: 'Matt',
+  age: 27 };
+let { name: personName, age: personAge } = person;
+console.log(personName); // Matt 
+console.log(personAge); // 27
+
+```
+
+##### 8.1.7.1 嵌套解构
+
+```javascript
+let person = { 
+  name: 'Matt', age: 27,
+  job: {
+    title: 'Software engineer' }
+};
+let personCopy = {};
+({name: personCopy.name, age: personCopy.age, job: personCopy.job
+} = person);
+
+// Because an object reference was assigned into personCopy, changing a property 
+// inside the person.job object will be propagated to personCopy: 
+person.job.title = 'Hacker'
+
+console.log(person);
+// { name: 'Matt', age: 27, job: { title: 'Hacker' } }
+```
+
+- 不完全解构
+
+````javascript
+let person = { 
+  name: 'Matt', age: 27
+};
+let personName, personBar, personAge;
+try {
+// person.foo is undefined, so this will throw an error
+({name: personName, foo: { bar: personBar }, age: personAge} = person);
+} catch(e) {}
+
+console.log(personName, personBar, personAge);
+// Matt, undefined, undefined
+````
+
+- 参数上下文匹配
+
+```javascript
+let person = { name: 'Matt', age: 27};
+
+function printPerson(foo, {name, age}, bar) {
+  console.log(arguments);
+  console.log(name, age);
+}
+function printPerson2(foo, {name: personName, age: personAge}, bar) { 
+  console.log(arguments);
+  console.log(personName, personAge);
+}
+
+printPerson('1st', person, '2nd');
+// ['1st', { name: 'Matt', age: 27 }, '2nd'] // 'Matt', 27
+
+printPerson2('1st', person, '2nd');
+// ['1st', { name: 'Matt', age: 27 }, '2nd'] // 'Matt', 27
+```
+
+### 8.2 Object 创建
+
+#### 8.2.1 工厂方法(The Factory Pattern)
+
+工厂方式以用于软件工程抽象特定object的设计模式而闻名
+
+```javascript
+
+function createPerson(name, age, job) { 
+  let o = new Object();
+  o.name = name;
+	o.age = age;
+	o.job = job;
+	o.sayName = function() {
+	console.log(this.name); 
+  };
+	return o; 
+}
+
+let person1 = createPerson("Nicholas", 29, "Software Engineer"); let person2 = createPerson("Greg", 27, "Doctor");
+```
+
+#### 8.2.2 函数构建模式(The Function Constructor Pattern)
+
+```javascript
+function Person(name, age, job){ 
+  this.name = name;
+	this.age = age;
+	this.job = job;
+	this.sayName = function() { 
+    console.log(this.name);
+}; }
+let person1 = new Person("Nicholas", 29, "Software Engineer"); 
+let person2 = new Person("Greg", 27, "Doctor");
+person1.sayName(); // Nicholas 
+person2.sayName(); // Greg
+
+```
+
+##### 8.2.2.1 构造函数(Constructors as Functions)
+
+```javascript
+// use as a constructor
+let person = new Person("Nicholas", 29, "Software Engineer"); person.sayName(); // "Nicholas"
+
+// call as a function
+Person("Greg", 27, "Doctor"); // adds to window 
+window.sayName();// "Greg"
+
+// call in the scope of another object let o = new Object();
+Person.call(o, "Kristen", 25, "Nurse"); o.sayName(); // "Kristen"
+```
+
+##### 8.2.2.2 构造函数的问题
+
+构造函数在ECMASScript中同样是Object
+
+```javascript
+function Person(name, age, job){ this.name = name;
+  this.age = age;
+  this.job = job;
+  this.sayName = sayName;
+}
+function sayName() { 
+  console.log(this.name);
+}
+let person1 = new Person("Nicholas", 29, "Software Engineer"); 
+let person2 = new Person("Greg", 27, "Doctor");
+person1.sayName(); // Nicholas 
+person2.sayName(); // Greg
+```
+
+#### 8.2.3 原型模式
+
+```javascript
+let Person = function() {};
+Person.prototype.name = "Nicholas"; 
+Person.prototype.age = 29; 
+Person.prototype.job = "Software Engineer"; Person.prototype.sayName = function() {
+  console.log(this.name); };
+let person1 = new Person(); 
+person1.sayName(); // "Nicholas"
+
+let person2 = new Person();
+person2.sayName(); // "Nicholas"
+
+console.log(person1.sayName == person2.sayName); // true
+```
+
+##### 8.2.3.1 原型工作原理
+
+对象具有属性\_\_proto\_\_，可称为隐式原型，一个对象的隐式原型指向构造该对象的构造函数的原型。不像每个对象都有\_\_proto\_\_属性来标识自己所继承的原型，只有函数才有prototype属性。
+
+- `hasOwnProperty()` ignores inherited properties
+
+```javascript
+'constructor' in obj; // true
+'__proto__' in obj; // true
+'hasOwnProperty' in obj; // true
+
+obj.hasOwnProperty('constructor'); // false
+obj.hasOwnProperty('__proto__'); // false
+obj.hasOwnProperty('hasOwnProperty'); // false
+```
+
+### 8.3 继承
+
+js中只有Implementation inheritance ，因为Interface inheritance is
+ not possible in ECMAScript because functions do not have signatures.
+
+#### 8.3.1 原型链
+
+```javascript
+function SuperType() { 
+  this.property = true;
+}
+SuperType.prototype.getSuperValue = function() { 
+  return this.property;
+};
+function SubType() { 
+  this.subproperty = false;
+}
+// inherit from SuperType 
+SubType.prototype = new SuperType();
+SubType.prototype.getSubValue = function () { 
+  return this.subproperty;
+};
+let instance = new SubType();
+console.log(instance.getSuperValue()); // true
+```
+
+##### 8.3.1.1 默认原型
+
+所有引用类型默认由Object继承，因此拥有Object.prototype的函数
+
+##### 8.3.1.2 原型与实例的关系
+
+```javascript
+console.log(instance instanceof Object); // true 
+console.log(instance instanceof SuperType); // true 
+console.log(instance instanceof SubType); // true
+
+console.log(Object.prototype.isPrototypeOf(instance)); // true 
+console.log(SuperType.prototype.isPrototypeOf(instance)); // true 
+console.log(SubType.prototype.isPrototypeOf(instance)); // true
+```
+
+##### 8.3.1.2 Working with Methods
+
+函数重载
+
+```javascript
+function SuperType() { 
+  this.property = true;
+}
+SuperType.prototype.getSuperValue = function() { 
+  return this.property;
+};
+function SubType() { 
+  this.subproperty = false;
+}
+
+// inherit from SuperType 
+SubType.prototype = new SuperType();
+
+// new method
+SubType.prototype.getSubValue = function () {
+  return this.subproperty; 
+};
+
+// override existing method 
+SubType.prototype.getSuperValue = 
+function () {
+  return false; 
+};
+
+let instance = new SubType(); console.log(instance.getSuperValue()); // false
+
+```
+
+#### 8.3.2 借用构造函数(Constructor Stealing)
+
+1. 避免了引用类型的属性被所有实例共享
+
+```javascript
+function SuperType() {
+  this.colors = ["red", "blue","green"];
+}
+function SubType() {
+	// inherit from SuperType
+	SuperType.call(this);
+}
+
+let instance1 = new SubType(); 
+instance1.colors.push("black");
+console.log(instance1.colors);	// "red,blue,green,black"
+
+let instance2 = new SubType();
+console.log(instance2.colors);	// "red,blue,green"
+```
+
+2. 可以在 Child 中向 Parent 传参
+
+```javascript
+function SuperType(name){ 
+  this.name = name;
+}
+function SubType() {
+	// inherit from SuperType passing in an argument 
+  SuperType.call(this, "Nicholas");
+	
+  // instance property
+	this.age = 29; 
+}
+
+let instance = new SubType();
+console.log(instance.name); // "Nicholas"; 
+console.log(instance.age); // 29
+```
+
+缺点：方法都在构造函数中定义，每次创建实例都会创建一遍方法。
+
+#### 8.3.3 组合继承
+
+原型链继承和经典继承双剑合璧。
+
+```javascript
+function Parent (name) {
+    this.name = name;
+    this.colors = ['red', 'blue', 'green'];
+}
+
+Parent.prototype.getName = function () {
+    console.log(this.name)
+}
+
+function Child (name, age) {
+
+    Parent.call(this, name);
+    
+    this.age = age;
+
+}
+
+Child.prototype = new Parent();
+Child.prototype.constructor = Child;
+
+var child1 = new Child('kevin', '18');
+
+child1.colors.push('black');
+
+console.log(child1.name); // kevin
+console.log(child1.age); // 18
+console.log(child1.colors); // ["red", "blue", "green", "black"]
+
+var child2 = new Child('daisy', '20');
+
+console.log(child2.name); // daisy
+console.log(child2.age); // 20
+console.log(child2.colors); // ["red", "blue", "green"]
+```
+
+#### 8.3.4 原型继承
+
+```javascript
+function object(o) { 
+  function F() {} F.prototype = o; 
+  return new F();
+}
+
+let person = {
+  name: "Nicholas",
+  friends: ["Shelby", "Court", "Van"]
+};
+let anotherPerson = object(person);
+anotherPerson.name = "Greg"; 
+anotherPerson.friends.push("Rob");
+
+let yetAnotherPerson = object(person); 
+yetAnotherPerson.name = "Linda"; yetAnotherPerson.friends.push("Barbie");
+
+console.log(person.friends); // "Shelby,Court,Van,Rob,Barbie"
+```
+
+就是 ES5 Object.create 的模拟实现，将传入的对象作为创建的对象的原型。
+
+缺点：
+
+包含引用类型的属性值始终都会共享相应的值，这点跟原型链继承一样。
+
+#### 8.3.5 寄生继承
+
+创建一个仅用于封装继承过程的函数，该函数在内部以某种形式来做增强对象，最后返回对象。
+
+```javascript
+function createObj (o) {
+    var clone = Object.create(o);
+    clone.sayName = function () {
+        console.log('hi');
+    }
+    return clone;
+}
+```
+
+缺点：跟借用构造函数模式一样，每次创建对象都会创建一遍方法。
+
+#### 8.3.6 寄生组合继承
+
+为了方便大家阅读，在这里重复一下组合继承的代码：
+
+```javascript
+function Parent (name) {
+    this.name = name;
+    this.colors = ['red', 'blue', 'green'];
+}
+
+Parent.prototype.getName = function () {
+    console.log(this.name)
+}
+
+function Child (name, age) {
+    Parent.call(this, name);
+    this.age = age;
+}
+
+Child.prototype = new Parent();
+
+var child1 = new Child('kevin', '18');
+
+console.log(child1)
+```
+
+组合继承最大的缺点是会调用两次父构造函数。
+
+一次是设置子类型实例的原型的时候：
+
+```javascript
+Child.prototype = new Parent();
+```
+
+一次在创建子类型实例的时候：
+
+```javascript
+var child1 = new Child('kevin', '18');
+```
+
+ 回想下 new 的模拟实现，其实在这句中，我们会执行：
+
+```javascript
+Parent.call(this, name);
+```
+
+在这里，我们又会调用了一次 Parent 构造函数。
+
+所以，在这个例子中，如果我们打印 child1 对象，我们会发现 Child.prototype 和 child1 都有一个属性为`colors`，属性值为`['red', 'blue', 'green']`。
+
+那么我们该如何精益求精，避免这一次重复调用呢？
+
+如果我们不使用 Child.prototype = new Parent() ，而是间接的让 Child.prototype 访问到 Parent.prototype 呢？
+
+看看如何实现：
+
+```javascript
+function Parent (name) {
+    this.name = name;
+    this.colors = ['red', 'blue', 'green'];
+}
+
+Parent.prototype.getName = function () {
+    console.log(this.name)
+}
+
+function Child (name, age) {
+    Parent.call(this, name);
+    this.age = age;
+}
+
+// 关键的三步
+var F = function () {};
+
+F.prototype = Parent.prototype;
+
+Child.prototype = new F();
+
+
+var child1 = new Child('kevin', '18');
+
+console.log(child1);
+```
+
+最后我们封装一下这个继承方法：
+
+```javascript
+function object(o) {
+    function F() {}
+    F.prototype = o;
+    return new F();
+}
+
+function prototype(child, parent) {
+    var prototype = object(parent.prototype);
+    prototype.constructor = child;
+    child.prototype = prototype;
+}
+
+// 当我们使用的时候：
+prototype(Child, Parent);
+```
+
+引用《JavaScript高级程序设计》中对寄生组合式继承的夸赞就是：
+
+这种方式的高效率体现它只调用了一次 Parent 构造函数，并且因此避免了在 Parent.prototype 上面创建不必要的、多余的属性。与此同时，原型链还能保持不变；因此，还能够正常使用 instanceof 和 isPrototypeOf。开发人员普遍认为寄生组合式继承是引用类型最理想的继承范式。
+
+### 8.4 Class
+
+#### 8.4.1 class 定义基础
+
+```javascript
+// class declaration 
+class Person {}
+// class expression 
+const Animal = class {};
+```
+
+- function声明挂起，class 声明不会
+
+```javascript
+console.log(FunctionExpression); // undefined 
+var FunctionExpression = function() {};
+console.log(FunctionExpression); // function() {}
+
+console.log(FunctionDeclaration); // FunctionDeclaration() {}
+function FunctionDeclaration() {} console.log(FunctionDeclaration); // FunctionDeclaration() {}
+
+console.log(ClassExpression); 		// undefined
+var ClassExpression = class {}; 
+console.log(ClassExpression);			// class {}
+
+console.log(ClassDeclaration); 		// ReferenceError: ClassDeclaration is not defined
+class ClassDeclaration {} 
+console.log(ClassDeclaration);		// class ClassDeclaration {}
+```
+
+##### 8.4.1.1 class构成
+
+```javascript
+// Valid empty class definition 
+class Foo {}
+
+// Valid class definition with constructor 
+class Bar {
+  constructor() {} 
+}
+
+// Valid class definition with getter 
+class Baz {
+  get myBaz() {}
+}
+
+// Valid class definition with static method 
+class Qux {
+  static myQux() {} 
+}
+```
+
+#### 8.4.2 class 构造函数
+
+##### 8.4.2.1 Instantiation
+
+1. a new object 创建在内存
+2. [[Prototype]]指针被分配到构造函数原型
+3. 构造函数的this被分配到new object
+4. 构造函数执行
+5. 如果构造函数返回object，就返回object；否则被生成的new object返回
+
+```javascript
+class Animal {}
+class Person { 
+  constructor() {
+  console.log('person ctor'); }
+}
+class Vegetable { 
+  constructor() {
+    this.color = 'orange'; 
+  }
+}
+
+let a = new Animal();
+let p = new Person(); // person ctor
+
+let v = new Vegetable(); 
+console.log(v.color); // orange
+```
+
+##### 8.4.2.2 将class看作特殊函数
+
+```javascript
+class Person {}
+console.log(Person); // class Person {} 
+console.log(typeof Person); // function
+```
+
+- class标识符拥有prototype属性，属性拥有constructor属性又引用class本身
+
+```javascript
+class Person{}
+console.log(Person.prototype); // { constructor: f() } 
+console.log(Person === Person.prototype.constructor); // true
+```
+
+- 构造函数与class的关系
+
+```javascript
+class Person {}
+let p1 = new Person();
+console.log(p1.constructor === Person); // true 
+console.log(p1 instanceof Person); // true 
+console.log(p1 instanceof Person.constructor); // false
+
+let p2 = new Person.constructor(); 
+console.log(p2.constructor === Person); // false
+console.log(p2 instanceof Person); // false 
+console.log(p2 instanceof Person.constructor); // true
+```
+
+#### 8.4.3 实例，原型与class 成员
+
+##### 8.4.3.1 示例成员(Instance Members)
+
+```javascript
+class Person { 
+  constructor() {
+// For this example, define a string with object wrapper // as to check object equality between instances below 
+    this.name = new String('Jack');
+    this.sayName = () => console.log(this.name);
+    this.nicknames = ['Jake', 'J-Dog'] }
+}
+let p1 = new Person(), 
+    p2 = new Person();
+
+p1.sayName(); // Jack 
+p2.sayName(); // Jack
+
+console.log(p1.name === p2.name); 
+console.log(p1.sayName === p2.sayName); 
+console.log(p1.nicknames === p2.nicknames); // false
+
+p1.name = p1.nicknames[0]; 
+p2.name = p2.nicknames[1];
+
+p1.sayName(); // Jake 
+p2.sayName(); // J-Dog
+```
+
+##### 8.4.3.2 原型与访问器
+
+- primitives and objects 不可以直接加入到class内的原型
+
+```javascript
+class Person { 
+  name: 'Jake'
+}
+// Uncaught SyntaxError: Unexpected token :
+```
+
+- get set
+
+```javascript
+class Person {
+  set name(newName) { 
+    this.name_ = newName;
+  }
+  get name() {
+    return this.name_;
+  }
+}
+let p = new Person();
+p.name = 'Jake'; 
+console.log(p.name); // Jake
+```
+
+##### 8.4.3.3 静态class方法与访问器
+
+```javascript
+class Person { 
+  constructor() {
+// Everything added to 'this' will exist on each individual instance
+    this.locate = () => console.log('instance', this); }
+// Defined on the class prototype object locate() {
+  console.log('prototype', this); }
+// Defined on the class
+  static locate() { 
+    console.log('class', this);
+  }
+}
+
+let p = new Person();
+
+p.locate(); // instance, Person {} 
+Person.prototype.locate(); // prototype, {constructor: ... } 
+Person.locate(); // class, class Person {}
+
+```
+
+##### 8.4.3.4 无函数原型与class成员
+
+```javascript
+class Person { 
+  sayName() {
+    console.log('${Person.greeting} ${this.name}'); 
+  }
+}
+// Define data member on class 
+Person.greeting = 'My name is';
+
+// Define data member on prototype 
+Person.prototype.name = 'Jake';
+
+let p = new Person(); 
+p.sayName(); // My name is Jake
+```
+
+##### 8.4.3.5 迭代与生成
+
+```javascript
+class Person { 
+  constructor() {
+    this.nicknames = ['Jack', 'Jake', 'J-Dog']; 
+  }
+    *[Symbol.iterator]() {
+      yield *this.nicknames.entries();
+  }
+}
+let p = new Person();
+for (let [idx, nickname] of p) {console.log(nickname); }
+// Jack // Jake // J-Dog
+```
+
+#### 8.4.4 继承
+
+##### 8.4.4.1 继承基础
+
+```javascript
+class Vehicle {}
+
+// Inherit from class
+class Bus extends Vehicle {}
+
+let b = new Bus();
+console.log(b instanceof Bus); // true 
+console.log(b instanceof Vehicle); // true
+
+function Person() {}
+
+// Inherit from function constructor 
+class Engineer extends Person {}
+
+let e = new Engineer();
+console.log(e instanceof Engineer); // true 
+console.log(e instanceof Person); // true
+```
+
+##### 8.4.4.2 构造函数、Homeobjects 与 super()
+
+- super()用于子类的构造函数中或者静态方法中
+
+```javascript
+class Vehicle { 
+  constructor() {
+    this.hasEngine = true; }
+}
+
+class Bus extends Vehicle { 
+  constructor() {
+// Cannot reference 'this' before super(), will throw ReferenceError 
+    super(); // same as super.constructor()
+    console.log(this instanceof Vehicle); // true
+    console.log(this); // Bus { hasEngine: true } 
+  }
+}
+
+new Bus();
+```
+
+##### 8.4.4.3 抽象基类(Abstract Base Classes)
+
+```javascript
+// Abstract base class 
+class Vehicle {
+  constructor() { 
+    console.log(new.target);
+  	if (new.target === Vehicle) {
+    	throw new Error('Vehicle cannot be directly instantiated'); 
+    }
+	} 
+}
+
+// Derived class
+class Bus extends Vehicle {}
+
+new Bus(); // class Bus {}
+new Vehicle(); // class Vehicle {}
+// Error: Vehicle cannot be directly instantiated
+```
+
+##### 8.4.4.4 由已经建类型继承(Inheriting from Built-in Types)
+
+```javascript
+class SuperArray extends Array { 
+  shuffle() {
+// Fisher-Yates shuffle
+    for (let i = this.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this[i], this[j]] = [this[j], this[i]]; }
+  } 
+}
+
+let a= new SuperArray(1, 2, 3, 4, 5);
+
+console.log(a instanceof Array); // true 
+console.log(a instanceof SuperArray); // true
+
+console.log(a); // [1, 2, 3, 4, 5] 
+a.shuffle();
+console.log(a); // [3, 1, 4, 5, 2]
+```
+
+##### 8.4.4.5 类掺合(Class Mixins)
 
 
 
